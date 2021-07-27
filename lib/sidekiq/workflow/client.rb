@@ -30,9 +30,10 @@ class Sidekiq::Workflow::Client
       key = "workflow::#{id}"
       raise "Workflow #{id} not found" unless redis.exists? key
       workflow = redis.hgetall key
+      klass    = workflow.fetch 'class'
       jobs     = workflow['jobs'].split "\n"
       jobs     = self.load_jobs redis, jobs
-      Sidekiq::Workflow.new id, jobs
+      Sidekiq::Workflow.new klass, id, jobs
     end
   end
 
@@ -122,7 +123,7 @@ class Sidekiq::Workflow::Client
     raise "Job #{id} not found" unless redis.exists? key
     job         = redis.hgetall key
     workflow    = job.fetch 'workflow'
-    klass       = Object.const_get job.fetch 'class'
+    klass       = job.fetch 'class'
     args        = job['args']
     args        = args ? JSON.load(args) : []
     before      = job.fetch('before', '').split(',')

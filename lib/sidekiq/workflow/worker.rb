@@ -7,7 +7,6 @@ module Sidekiq::Workflow::Worker
       result, exception = nil, nil
       begin
         result           = super *args, **kwargs
-        @job.error_at    = nil
         @job.finished_at = Time.now
       rescue => e
         exception = e

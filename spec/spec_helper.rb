@@ -1,5 +1,5 @@
 require 'sidekiq/workflow'
-require 'pry-byebug'
+require 'timecop'
 
 redis_url = ENV.fetch 'REDIS_URL', 'redis://localhost/'
 Sidekiq::Workflow.configure url: redis_url

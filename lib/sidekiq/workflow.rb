@@ -1,14 +1,14 @@
 require 'sidekiq'
 
 class Sidekiq::Workflow
-  attr_reader :id
-  attr_reader :jobs, :depends
+  attr_reader :klass, :id, :jobs, :depends
 
   def self.configure(config)
     Client.instance.configure config
   end
 
-  def initialize(id, jobs = {})
+  def initialize(klass, id, jobs = {})
+    @klass   = klass
     @id      = id
     @jobs    = jobs
     @depends = []
@@ -23,9 +23,8 @@ class Sidekiq::Workflow
     Client.instance.persist_workflow self
   end
 
-  def self.start!(...)
-    workflow = self.create
-    workflow.configure(...)
+  def self.create!(...)
+    workflow = self.create(...)
 
     depends = workflow.depends
     jobs    = workflow.jobs
@@ -35,6 +34,11 @@ class Sidekiq::Workflow
     end
 
     workflow.persist!
+    workflow
+  end
+
+  def self.start!(...)
+    workflow = self.create!(...)
     workflow.start!
     workflow
   end
@@ -47,17 +51,20 @@ class Sidekiq::Workflow
     return :failed if @jobs.any? { |_, j| j.failed? }
     return :error if @jobs.any? { |_, j| j.error? }
     return :finished if @jobs.all? { |_, j| j.finished? }
+    return :started if @jobs.any? { |_, j| j.started? }
     return :pending
   end
 
   private
 
-  def self.create
-    self.new SecureRandom.uuid
+  def self.create(...)
+    workflow = self.new self.name, SecureRandom.uuid
+    workflow.configure(...)
+    workflow
   end
 
-  def job(*args, before: nil, after: nil)
-    job       = Job.create self, *args, {}
+  def job(klass, *args, before: nil, after: nil)
+    job       = Job.create self, klass.name, *args, {}
     id        = job.id
     @jobs[id] = job
 
@@ -75,3 +82,4 @@ end
 require 'sidekiq/workflow/client'
 require 'sidekiq/workflow/worker'
 require 'sidekiq/workflow/job'
+require 'sidekiq/workflow/overview'

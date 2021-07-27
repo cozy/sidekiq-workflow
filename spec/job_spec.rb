@@ -53,12 +53,78 @@ RSpec.describe Sidekiq::Workflow::Job do
       expect(job.status).to eq :enqueued
       job.started_at = Time.now
       expect(job.status).to eq :started
-      job.finished_at = Time.now
-      expect(job.status).to eq :finished
       job.error_at = Time.now
       expect(job.status).to eq :error
+      job.finished_at = Time.now
+      expect(job.status).to eq :finished
       job.failed_at = Time.now
       expect(job.status).to eq :failed
+    end
+  end
+
+  describe '#state' do
+    it 'must flag the job as finished in case of success' do
+      class TestJob
+        include Sidekiq::Workflow::Worker
+
+        def perform; end
+      end
+
+      workflow = Sidekiq::Workflow.new Class, 'workflow_1'
+      job      = Sidekiq::Workflow::Job.create workflow, TestJob.name
+      allow(Sidekiq::Workflow::Job).to receive(:find).with(job.id) { job }
+      expect(job.enqueued_at).to be_nil
+      expect(job.finished_at).to be_nil
+      expect(job.error_at).to be_nil
+      expect(job.failed_at).to be_nil
+
+      job.perform
+      expect(job.enqueued_at).to_not be_nil
+      expect(job.finished_at).to be_nil
+      expect(job.error_at).to be_nil
+      expect(job.failed_at).to be_nil
+
+      TestJob.perform_one
+      expect(job.enqueued_at).to_not be_nil
+      expect(job.finished_at).to_not be_nil
+      expect(job.error_at).to be_nil
+      expect(job.failed_at).to be_nil
+    end
+
+    it 'must flag the job as errored in case of error' do
+      class TestJob
+        include Sidekiq::Workflow::Worker
+
+        def self.message=(message)
+          @@message = message
+        end
+
+        def perform
+          raise @@message if @@message
+        end
+      end
+
+      workflow = Sidekiq::Workflow.new Class, 'workflow_1'
+      job      = Sidekiq::Workflow::Job.create workflow, TestJob.name
+      allow(Sidekiq::Workflow::Job).to receive(:find).with(job.id) { job }
+
+      job.perform
+      expect(job.error_at).to be_nil
+      expect(job.errors).to be_empty
+      expect(job.finished_at).to be_nil
+      TestJob.message = 'perform_error'
+      Timecop.freeze do |now|
+        expect { TestJob.perform_one }.to raise_error 'perform_error'
+        expect(job.error_at).to eq now
+        expect(job.errors).to eq([{ date: now, error: 'perform_error' }])
+      end
+      expect(job.finished_at).to be_nil
+
+      job.perform
+      TestJob.message = nil
+      TestJob.perform_one
+      expect(job.error_at).to_not be_nil
+      expect(job.finished_at).to_not be_nil
     end
   end
 end

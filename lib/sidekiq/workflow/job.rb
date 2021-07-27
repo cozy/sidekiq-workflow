@@ -37,8 +37,8 @@ class Sidekiq::Workflow::Job
 
   def status
     return :failed if self.failed?
-    return :error if self.error?
     return :finished if self.finished?
+    return :error if self.error?
     return :started if self.started?
     return :enqueued if self.enqueued?
     :pending
@@ -53,8 +53,8 @@ class Sidekiq::Workflow::Job
     !self.have_after?
   end
 
-  def self.create(workflow, *args)
-    self.new workflow.id, SecureRandom.uuid, *args
+  def self.create(workflow, klass, *args)
+    self.new workflow.id, SecureRandom.uuid, klass, *args
   end
 
   def persist!
@@ -66,6 +66,6 @@ class Sidekiq::Workflow::Job
   end
 
   def perform
-    @klass.perform_async self.id, *@args
+    Object.const_get(@klass).perform_async self.id, *@args
   end
 end

@@ -2,15 +2,23 @@ PATH
   remote: .
   specs:
     sidekiq-workflow (0.0.0)
+      colorize (~> 0.8, >= 0.8.1)
       redis (~> 4.3, >= 4.3.1)
       redlock (~> 1.2, >= 1.2.1)
       sidekiq (~> 6.2, >= 6.2.1)
+      terminal-table (~> 3.0, >= 3.0.1)
 
 GEM
   remote: https://rubygems.org/
   specs:
+    coderay (1.1.3)
+    colorize (0.8.1)
     connection_pool (2.2.5)
     diff-lcs (1.4.4)
+    method_source (1.0.0)
+    pry (0.14.1)
+      coderay (~> 1.1)
+      method_source (~> 1.0)
     rack (2.2.3)
     redis (4.3.1)
     redlock (1.2.1)
@@ -32,13 +40,19 @@ GEM
       connection_pool (>= 2.2.2)
       rack (~> 2.0)
       redis (>= 4.2.0)
+    terminal-table (3.0.1)
+      unicode-display_width (>= 1.1.1, < 3)
+    timecop (0.9.4)
+    unicode-display_width (2.0.0)
 
 PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
+  pry (~> 0.14, >= 0.14.1)
   rspec (~> 3.10, >= 3.10.0)
   sidekiq-workflow!
+  timecop (~> 0.9, >= 0.9.4)
 
 BUNDLED WITH
    2.2.16
