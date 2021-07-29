@@ -49,8 +49,8 @@ class Sidekiq::Workflow
 
   def status
     return :failed if @jobs.any? { |_, j| j.failed? }
-    return :error if @jobs.any? { |_, j| j.error? }
     return :finished if @jobs.all? { |_, j| j.finished? }
+    return :error if @jobs.any? { |_, j| j.error? }
     return :started if @jobs.any? { |_, j| j.started? }
     return :pending
   end
