@@ -5,11 +5,16 @@ require 'json'
 class Sidekiq::Workflow::Client
   include Singleton
 
-  def configure(config)
-    @ttl = config.delete(:ttl) { 60 * 60 * 24 * 30 }
+  DEFAULT_REDIS_TTL    = 60 * 60 * 24 * 30 # 1 month
+  DEFAULT_POOL_TIMEOUT = (60 * 60).freeze # 1 minute
+  DEFAULT_POOL_SIZE    = 10.freeze
+
+  def configure(config, timeout: DEFAULT_POOL_TIMEOUT, size: DEFAULT_POOL_SIZE)
+    @ttl = config.delete(:ttl) { DEFAULT_REDIS_TTL }
     Sidekiq.configure_server { |c| c.redis = config }
     Sidekiq.configure_client { |c| c.redis = config }
     @redlock = Redlock::Client.new [Redis.new(config)]
+    @pool    = ConnectionPool.new(timeout: timeout, size: size) { Redis.new config }
   end
 
   def persist_workflow(workflow)
@@ -84,7 +89,7 @@ class Sidekiq::Workflow::Client
   def redis(&block)
     # @pool.with { |r| r.multi &block }
     #@pool.with { |r| block.call r }
-    Sidekiq.redis &block
+    @pool.with &block
   end
 
   def persist_jobs(redis, jobs)
