@@ -57,6 +57,16 @@ class Sidekiq::Workflow::Job
     self.new workflow.id, SecureRandom.uuid, klass, *args
   end
 
+  def error!(exception)
+    now = Time.now
+    self.errors << { date: now, error: exception.to_s }
+    self.error_at = now
+  end
+
+  def fail!
+    self.failed_at = Time.now
+  end
+
   def persist!
     Sidekiq::Workflow::Client.instance.persist_job self
   end
