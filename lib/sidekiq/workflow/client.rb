@@ -118,7 +118,7 @@ class Sidekiq::Workflow::Client
       finished_at: job.finished_at&.to_f,
       error_at:    job.error_at&.to_f,
       failed_at:   job.failed_at&.to_f,
-      errors:      errors.empty? ? nil : errors.join("\n")
+      errors:      JSON.dump(errors)
     }.compact
     redis.expire key, @ttl
   end
@@ -130,10 +130,10 @@ class Sidekiq::Workflow::Client
     workflow    = job.fetch 'workflow'
     klass       = job.fetch 'class'
     args        = job['args']
-    args        = args ? JSON.load(args) : []
+    args        = args ? JSON.parse(args) : []
     before      = job.fetch('before', '').split(',')
     after       = job.fetch('after', '').split(',')
-    errors      = job.fetch('errors', '').split "\n"
+    errors      = JSON.parse(job.fetch('errors', ''))
     enqueued_at = _time job['enqueued_at']
     started_at  = _time job['started_at']
     finished_at = _time job['finished_at']
