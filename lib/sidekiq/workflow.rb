@@ -59,6 +59,11 @@ class Sidekiq::Workflow
     return :pending
   end
 
+  def [](klass)
+    klass = klass.name
+    @jobs.select { |_, j| j.klass == klass }.to_h
+  end
+
   private
 
   def self.create(...)
