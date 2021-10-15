@@ -23,6 +23,10 @@ class Sidekiq::Workflow
     Client.instance.persist_workflow self
   end
 
+  def reload!
+    @jobs = Client.instance.load_jobs @jobs.keys
+  end
+
   def self.create!(...)
     workflow = self.create(...)
 

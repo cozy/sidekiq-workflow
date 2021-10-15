@@ -37,7 +37,7 @@ class Sidekiq::Workflow::Client
       workflow = redis.hgetall key
       klass    = workflow.fetch 'class'
       jobs     = workflow['jobs'].split "\n"
-      jobs     = self.load_jobs redis, jobs
+      jobs     = self._load_jobs redis, jobs
       Sidekiq::Workflow.new klass, id, jobs
     end
   end
@@ -48,6 +48,10 @@ class Sidekiq::Workflow::Client
 
   def load_job(id)
     self.redis { |r| self._load_job r, id }
+  end
+
+  def load_jobs(ids)
+    self.redis { |r| self._load_jobs r, ids }
   end
 
   def lock(key, ttl, &block)
@@ -146,7 +150,7 @@ class Sidekiq::Workflow::Client
                                failed_at:   failed_at, errors: errors
   end
 
-  def load_jobs(redis, ids)
+  def _load_jobs(redis, ids)
     ids.collect do |id|
       job = self._load_job redis, id
       [job.id, job]
