@@ -15,8 +15,7 @@ class Sidekiq::Workflow
   end
 
   def start!
-    initial_jobs = self.initial_jobs
-    initial_jobs.each { |_, j| j.perform }
+    self.initial_jobs.each { |_, j| j.perform }
   end
 
   def persist!
@@ -25,6 +24,11 @@ class Sidekiq::Workflow
 
   def reload!
     @jobs = Client.instance.load_jobs @jobs.keys
+  end
+
+  def continue!
+    @jobs.select { |_, j| j.failed? }
+         .each { |_, j| j.restart! }.to_h
   end
 
   def self.create!(...)

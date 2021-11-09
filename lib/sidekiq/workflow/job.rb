@@ -67,6 +67,12 @@ class Sidekiq::Workflow::Job
     self.failed_at = Time.now
   end
 
+  def restart!
+    self.failed_at = nil
+    self.persist!
+    self.perform
+  end
+
   def persist!
     Sidekiq::Workflow::Client.instance.persist_job self
   end

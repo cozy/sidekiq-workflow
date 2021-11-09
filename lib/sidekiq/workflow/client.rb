@@ -100,9 +100,19 @@ class Sidekiq::Workflow::Client
     jobs.each { |_, j| self._persist_job redis, j }
   end
 
-  def _time(time)
-    return unless time
+  def _time(time, default = nil)
+    return default unless time
     Time.at time.to_f
+  end
+
+  def _json(json, default = nil)
+    return default unless json
+    JSON.parse json
+  end
+
+  def _array(string)
+    return [] unless string
+    string.split ','
   end
 
   def _persist_job(redis, job)
@@ -111,7 +121,7 @@ class Sidekiq::Workflow::Client
     after  = job.after
     errors = job.errors
     args   = job.args
-    redis.hset key, {
+    params = {
       workflow:    job.workflow,
       class:       job.klass,
       args:        args.empty? ? nil : JSON.dump(args),
@@ -122,8 +132,14 @@ class Sidekiq::Workflow::Client
       finished_at: job.finished_at&.to_f,
       error_at:    job.error_at&.to_f,
       failed_at:   job.failed_at&.to_f,
-      errors:      JSON.dump(errors)
-    }.compact
+      errors:      errors.empty? ? nil : JSON.dump(errors)
+    }
+
+    not_null = params.compact
+    null     = params.keys - not_null.keys
+    redis.hset key, not_null
+    redis.hdel key, null
+
     redis.expire key, @ttl
   end
 
@@ -133,11 +149,10 @@ class Sidekiq::Workflow::Client
     job         = redis.hgetall key
     workflow    = job.fetch 'workflow'
     klass       = job.fetch 'class'
-    args        = job['args']
-    args        = args ? JSON.parse(args) : []
-    before      = job.fetch('before', '').split(',')
-    after       = job.fetch('after', '').split(',')
-    errors      = JSON.parse(job.fetch('errors', ''))
+    args        = _json job['args'], []
+    before      = _array job['before']
+    after       = _array job['after']
+    errors      = _json job['errors'], []
     enqueued_at = _time job['enqueued_at']
     started_at  = _time job['started_at']
     finished_at = _time job['finished_at']
