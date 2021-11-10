@@ -33,7 +33,7 @@ class Sidekiq::Workflow::Client
   def load_workflow(id)
     self.redis do |redis|
       key = "workflow::#{id}"
-      raise "Workflow #{id} not found" unless redis.exists? key
+      return unless redis.exists? key
       workflow = redis.hgetall key
       klass    = workflow.fetch 'class'
       jobs     = workflow['jobs'].split "\n"

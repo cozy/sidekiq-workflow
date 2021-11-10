@@ -51,8 +51,14 @@ class Sidekiq::Workflow
     workflow
   end
 
-  def self.find(id)
+  def self.[](id)
     Client.instance.load_workflow id
+  end
+
+  def self.find(id)
+    workflow = self[id]
+    raise "Workflow #{id} not found" unless workflow
+    workflow
   end
 
   def status
