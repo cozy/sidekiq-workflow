@@ -111,6 +111,10 @@ class Sidekiq::Workflow
   def initial_jobs
     @jobs.select { |_, j| j.initial_job? }.to_h
   end
+
+  def table
+    Sidekiq::Workflow::Overview.new(self).to_s
+  end
 end
 
 require 'sidekiq/workflow/client'
