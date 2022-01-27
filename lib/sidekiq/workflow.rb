@@ -61,6 +61,8 @@ class Sidekiq::Workflow
     workflow
   end
 
+  TERMINAL_STATES = %i[failed finished].freeze
+
   def status
     return :failed if @jobs.any? { |_, j| j.failed? }
     return :finished if @jobs.all? { |_, j| j.finished? }
@@ -72,6 +74,19 @@ class Sidekiq::Workflow
   def [](klass)
     klass = klass.name
     @jobs.select { |_, j| j.klass == klass }.to_h
+  end
+
+  def wait(delay = 1, exit_at_first_error: false, debug: false)
+    stop_states = TERMINAL_STATES.dup
+    stop_states << :error if exit_at_first_error
+    while true
+      status = self.status
+      ap status if debug
+      break if stop_states.include? status
+      sleep delay
+      self.reload!
+    end
+    self
   end
 
   private
