@@ -2,7 +2,7 @@
 
 ## Why yet another Sidekiq workflow library?
 
-[`easymarketing/sidekiq_workflows`](https://github.com/easymarketing/sidekiq_workflows])
+[`easymarketing/sidekiq_workflows`](https://github.com/easymarketing/sidekiq_workflows)
 is only usable with [Sidekiq Pro](https://sidekiq.org/products/pro.html)
 
 [`chaps-io/gush`](https://github.com/chaps-io/gush) move from Sidekiq to
