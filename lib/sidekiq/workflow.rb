@@ -98,7 +98,7 @@ class Sidekiq::Workflow
   end
 
   def job(klass, *args, before: nil, after: nil)
-    job       = Job.create self, klass.name, *args, {}
+    job       = Job.create self, klass.name, *args
     id        = job.id
     @jobs[id] = job
 
